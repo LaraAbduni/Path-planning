@@ -94,8 +94,6 @@ Ao final da execução, o programa retorna o caminho simplificado e pode exibir 
 
 [Link do vídeo do robô funcionando](https://youtube.com/shorts/QucrSaeLNf0?si=Ysff48Me1zvZ4ROu)
 
-> **Observação:** este link é provisório e deverá ser substituído pelo vídeo atual antes da entrega.
-
 ## Entrega
 
 O repositório e o link do vídeo devem ser entregues pelo Blackboard até as **23h do dia 05/10/2026**.
