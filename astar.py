@@ -24,8 +24,8 @@ class AStarPathfinder:
         self.GOAL_REACHEABLE = False  
         
         # Prepara o mapa, expandindo suas bordas e ajustando o array.
-        self.map = map_array.copy()
-        self.map_array = self.preprocess_map(map_array)
+        self.map = map_array.copy()                                   #copia o mapa
+        self.map_array = self.preprocess_map(map_array)               #guarda uma cópia do mapa original 
 
         # Cria um campo potencial baseado no mapa para influenciar o caminho.
         self.potential_field = self.create_potential_field()
@@ -46,13 +46,16 @@ class AStarPathfinder:
         for i in range(map_array.shape[0]):
             for j in range(map_array.shape[1]):
                 valor = map_array[i][j]
-                
+                #valor menor que 60 vira obstaculo
                 if valor < 60:
                     processed_map[i][j] = 0
+                #valor entre 60 e 150 vira desconhecido
                 elif valor == 128 or valor == 205:
                     processed_map[i][j] = 128
+                #valor maior ou igual a 150 vira livre
                 elif valor >= 150:
                     processed_map[i][j] = 255
+                #resto vira obstaculo
                 else:
                     processed_map[i][j] = 0
 
@@ -69,23 +72,36 @@ class AStarPathfinder:
         
         vazio = self.map_array != 0
 
+        #distância até o obstáculo mais próximo
         distancias = distance_transform_edt(vazio)
 
+        #Quanto maior o valor, mais distante a célula está das paredes
+        #todas as células cuja distância até um obstáculo seja menor que buffer_factor tornam-se obstáculos if bufffactor=3
         perto = distancias < self.buffer_factor
         self.map_array[perto] = 0
 
+        #isso deixa a parede mais "espessa"
+
+        #cria uma matriz de números reais, inicialmente preenchida com zero.
         potencial = np.zeros_like(distancias, dtype=float)
 
+        #define até que distância a parede influencia o custo.
         distancia_influencia = self.buffer_factor * 5
 
+
+        #percorre o mapa
         for i in range(self.map_array.shape[0]):
             for j in range(self.map_array.shape[1]):
+                #obstáculos recebem custo infinito
                 if self.map_array[i][j] == 0:
                     potencial[i][j] = np.inf
+                #células próximas de obstáculos recebem uma penalização
                 elif distancias[i][j] < distancia_influencia:
                     potencial[i][j] = self.wall_influence * (
                         distancia_influencia - distancias[i][j]
                     )
+
+        #formula é: custo potencial = wall_influence * (distancia_influencia - distancia_ate_obstaculo)
 
         return potencial
 
@@ -100,12 +116,14 @@ class AStarPathfinder:
         Returns:
             float: Resultado da heurística.
         """
-
+        #calcula as diferenças entre linhas e colunas
         dist_x = a[0] - b[0]
         dist_y = a[1] - b[1]
 
+        #aplica a distancia euclidiana
         dist = ((dist_x ** 2) + (dist_y ** 2)) ** 0.5
 
+        #daria para usar a distancia de manhattan pq é permitido apenas movimentos verticais e horizontais
         return dist
 
     def find_path(self):
@@ -117,31 +135,53 @@ class AStarPathfinder:
             tuple: O ponto final (objetivo) ou None se não encontrado.
         """
 
+        #cria uma fila de prioridade e insere o ponto inicial
+        #na teoria ele usa sistema de fila, ignora a nomeclatura 
         pilha = []
         heapq.heappush(pilha, (0, self.start))
-        
-        came_from = {}
+
+        #O A* prioriza os nós com menor: f(n) = g(n) + h(n)
+
+        #cada item possui um (f_score, posição)
+        # O menor f_score é retirado primeiro.
+
+        # g_score: custo real acumulado desde o início;
+        # heuristic: estimativa até o objetivo;
+        # f_score: soma dos dois.
+        # Além disso, o g_score inclui o custo de proximidade das paredes.
+                
+        came_from = {}   #Armazena de onde cada célula veio.
         
         g_score = {}
         g_score[self.start] = 0
+        #g_score armazena o menor custo conhecido entre o início e cada célula (o custo do ponto inicial é zero)
         
+        #O robô pode movimentar-se em quatro direções
         direcoes = [
             (-1, 0),  # cima
             (1, 0),   # baixo
             (0, -1),  # esquerda
             (0, 1)    # direita
         ]
-        
+
+        #Armazena as dimensões do mapa.
         linhas = self.map_array.shape[0]
         colunas = self.map_array.shape[1]
-        
+
+        #continua enquanto existir algum ponto a explorar
         while pilha:
+            #remove o item com menor prioridade e pega sua posição
             current = heapq.heappop(pilha)[1]
-            
+
+            #Se a posição atual for o objetivo
             if current == self.goal:
+                #marca que o objetivo foi alcançado;
+                #retorna o dicionário de predecessores;
+                #retorna o nó final.
                 self.GOAL_REACHEABLE = True
                 return came_from, current
-            
+
+            #geração dos vizinhos
             for direcao in direcoes:
                 vizinho = (
                     current[0] + direcao[0],
@@ -158,29 +198,40 @@ class AStarPathfinder:
                 #se for uma parede/obstaculo
                 if self.map_array[vizinho] == 0:
                     continue
-                
+
+                #Calcula o custo do movimento
                 move_cost = self.heuristic(current, vizinho)
+                #obtem a penalização por proximidade de paredes
                 wall_cost = self.potential_field[vizinho]
-                
+
+                #calcula o possível novo custo para chegar ao vizinho
                 tentative_g_score = (
                     g_score[current]
                     + move_cost
                     + wall_cost
                 )
+                #g(vizinho) = g(atual) + custo do movimento + custo da parede
                 
+                #atualiza vizinho se ainda não tiver sido visitado ou o novo caminho até ele for mais barato
                 if vizinho not in g_score or tentative_g_score < g_score[vizinho]:
+                    #registra que o vizinho foi alcançado a partir da posição atual
                     came_from[vizinho] = current
+
+                    #salva o novo custo
                     g_score[vizinho] = tentative_g_score
 
+                    #calcula f_score = g_score + heurística até o objetivo
                     f_score = tentative_g_score + self.heuristic(vizinho, self.goal)
 
+                    #insere o vizinho na fila de prioridade
                     heapq.heappush(pilha, (f_score, vizinho))
                     
-                
+        #se a fila esvaziar sem alcançar o objetivo
         print("Caminho não encontrado")
         return None, None
 
     def reconstruct_path(self, came_from: dict, current: tuple) -> list:
+        #O A* não constrói diretamente uma lista ordenada do caminho. Ele guarda o predecessor de cada posição
         """
         Reconstrói o caminho a partir do ponto final até o inicial.
         
@@ -191,7 +242,7 @@ class AStarPathfinder:
         Returns:
             list: Lista de tuplas com caminho reconstruído.
         """
-        
+        #Inicializa o caminho com o nó final
         list = [current]
         
         #o while segue a linha de pai para filho dentro do dicionario, 
@@ -206,6 +257,7 @@ class AStarPathfinder:
         return list
 
     def know_path(self, path: list) -> list:
+        #Essa função corta o caminho quando encontra uma região desconhecida
         """
         Remove trechos desconhecidos e ajusta o caminho, se necessário.
 
@@ -216,18 +268,25 @@ class AStarPathfinder:
             list: Caminho ajustado.
         """
 
+        #cria uma lista para armazenar apenas a parte conhecida
         caminho_conhecido = []
+        #percorre as células do caminho
         for celula in path:
             linha = celula[0]
             coluna = celula[1]
+            #se encontrar uma célula desconhecida, interrompe o percurso
             if self.map_array[linha][coluna] == 128: # checa se o caminho nao é desconhecido
                 break
-            
+            #se a célula não for desconhecida, adiciona-a ao resultado
             caminho_conhecido.append(celula)
         
         return caminho_conhecido
 
     def simplify_path(self, path: list) -> list:
+        #Essa função remove pontos intermediários em trechos retos, mantendo:
+        #o ponto inicial;
+        #pontos onde ocorre mudança de direção;
+        #o ponto final.
         """
         Simplifica o caminho removendo direções repetidas.
         
@@ -237,34 +296,45 @@ class AStarPathfinder:
         Returns:
             list: Caminho simplificado.
         """
+        #Se a lista estiver vazia, retorna outra lista vazia
         if not path:
             return []
 
+        #Se houver apenas um ou dois pontos, não existe nenhum ponto intermediário a remover
         if len(path) <= 2:
             return path.copy()
 
+        #O ponto inicial sempre é preservado
         caminho_simplificado = [path[0]]
 
         # direcao do primeiro segmento
+        #calcula a direção entre o primeiro e o segundo ponto
         direcao_anterior = (
             path[1][0] - path[0][0],
             path[1][1] - path[0][1]
         )
 
+        #O laço começa em 2, pois a direção entre os pontos 0 e 1 já foi calculada
         for i in range(2, len(path)):
+            #calcula a direção do segmento atual
             direcao_atual = (
                 path[i][0] - path[i - 1][0],
                 path[i][1] - path[i - 1][1]
             )
 
             # se mudou a direcao, o ponto anterior é um canto importante
+            #se a direção mudou, significa que houve uma curva
             if direcao_atual != direcao_anterior:
+                #adiciona o ponto imediatamente anterior, pois ele é o ponto da curva
                 caminho_simplificado.append(path[i - 1])
+                #atualiza a direção de referência
                 direcao_anterior = direcao_atual
 
         # garante que o ultimo ponto entre no caminho
+        #o último ponto sempre é adicionado
         caminho_simplificado.append(path[-1])
 
+        #retorna somente os pontos essenciais
         return caminho_simplificado
 
     def plot_path(self, path: list, simplified_path: list):
