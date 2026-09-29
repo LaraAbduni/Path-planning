@@ -60,28 +60,23 @@ astar = AStarPathfinder(
 )
 ```
 
-## Dependências
 
-O projeto utiliza Python 3 e as seguintes bibliotecas:
 
-- NumPy;
-- OpenCV;
-- Matplotlib;
-- SciPy.
+## Como executar
 
-As dependências podem ser instaladas com:
+Instale o **Python 3** e, no terminal, execute:
 
 ```bash
 pip install numpy opencv-python matplotlib scipy
 ```
 
-## Como executar
-
-Coloque o mapa `.pgm` no caminho indicado no arquivo `astar.py` e execute:
+Depois, coloque o mapa `.pgm` no caminho definido no código e rode o arquivo:
 
 ```bash
 python astar.py
 ```
+
+O programa calculará o caminho e exibirá a visualização do resultado.
 
 Ao final da execução, o programa retorna o caminho simplificado e pode exibir uma visualização contendo:
 
@@ -93,7 +88,3 @@ Ao final da execução, o programa retorna o caminho simplificado e pode exibir 
 ## Vídeo do robô
 
 [Link do vídeo do robô funcionando](https://youtube.com/shorts/QucrSaeLNf0?si=Ysff48Me1zvZ4ROu)
-
-## Entrega
-
-O repositório e o link do vídeo devem ser entregues pelo Blackboard até as **23h do dia 05/10/2026**.
