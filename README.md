@@ -87,4 +87,4 @@ Ao final da execução, o programa retorna o caminho simplificado e pode exibir 
 
 ## Vídeo do robô
 
-[Link do vídeo do robô funcionando](https://youtube.com/shorts/QucrSaeLNf0?si=Ysff48Me1zvZ4ROu)
+[Link do vídeo do robô funcionando](https://youtu.be/HmUi_jUoUiU?si=8_CltfI3uF88OQOt)
